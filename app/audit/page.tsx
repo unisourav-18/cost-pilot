@@ -1,61 +1,79 @@
-import { startupAuditStack } from "@/data/mockAudit";
+"use client";
 
-import { runAudit } from "@/lib/audit/runAudit";
+import { useState } from "react";
 
+import AuditForm from "@/components/forms/AuditForm";
 import SummaryCard from "@/components/results/SummaryCard";
 import RecommendationCard from "@/components/results/RecommendationCard";
 
+import { runAudit } from "@/lib/audit/runAudit";
+
+import { AuditResult, AuditToolEntry } from "@/types/audit";
+
 export default function AuditPage() {
-  const audit = runAudit(startupAuditStack);
+  const [auditResult, setAuditResult] =
+    useState<AuditResult | null>(null);
+
+  const handleAudit = (entries: AuditToolEntry[]) => {
+    const result = runAudit(entries);
+
+    setAuditResult(result);
+  };
 
   return (
-    <main className="min-h-screen bg-black text-white p-8">
-      <div className="max-w-6xl mx-auto">
+    <main className="min-h-screen bg-black px-6 py-10 text-white">
+      <div className="mx-auto max-w-6xl">
         <div className="mb-10">
-          <h1 className="text-5xl font-bold mb-4">
-            CostPilot Audit Report
+          <h1 className="text-5xl font-bold">
+            CostPilot Audit Engine
           </h1>
 
-          <p className="text-zinc-400 text-lg">
-            AI stack spend analysis for startups
+          <p className="mt-4 text-zinc-400">
+            Analyze your AI stack and identify overspending.
           </p>
         </div>
 
-        {/* Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <SummaryCard
-            title="Monthly Spend"
-            value={`$${audit.totalMonthlySpend}`}
-          />
+        <AuditForm onSubmit={handleAudit} />
 
-          <SummaryCard
-            title="Potential Savings"
-            value={`$${audit.estimatedSavings}`}
-            color="text-green-400"
-          />
-
-          <SummaryCard
-            title="Stack Score"
-            value={`${audit.stackScore}/100`}
-            color="text-blue-400"
-          />
-        </div>
-
-        {/* Recommendations */}
-        <div>
-          <h2 className="text-3xl font-bold mb-6">
-            Recommendations
-          </h2>
-
-          <div className="space-y-5">
-            {audit.recommendations.map((recommendation) => (
-              <RecommendationCard
-                key={recommendation.id}
-                recommendation={recommendation}
+        {auditResult && (
+          <>
+            <div className="mt-12 grid gap-6 md:grid-cols-3">
+              <SummaryCard
+                title="Total Monthly Spend"
+                value={`$${auditResult.totalMonthlySpend}`}
               />
-            ))}
-          </div>
-        </div>
+
+              <SummaryCard
+                title="Estimated Savings"
+                value={`$${auditResult.estimatedSavings}`}
+                color="text-emerald-400"
+              />
+
+              <SummaryCard
+                title="Stack Score"
+                value={`${auditResult.stackScore}/100`}
+                color="text-yellow-400"
+              />
+            </div>
+
+            <div className="mt-12">
+              <h2 className="mb-6 text-3xl font-bold">
+                Recommendations
+              </h2>
+
+              <div className="grid gap-6">
+                {auditResult.recommendations.map(
+                  (recommendation) => (
+                    <RecommendationCard
+                      key={recommendation.id}
+                      recommendation={recommendation}
+                    />
+                  )
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </main>
   );
