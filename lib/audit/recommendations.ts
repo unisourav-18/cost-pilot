@@ -1,73 +1,137 @@
-import { plans } from "@/data/plans";
 import { alternatives } from "@/data/alternatives";
 import { auditRules } from "@/data/rules";
 
-export interface AuditInput {
-  toolId: string;
-  currentPlan: string;
-  monthlySpend: number;
-  seats: number;
-}
-
-export interface Recommendation {
-  type: "warning" | "saving" | "alternative";
-  title: string;
-  description: string;
-  estimatedSavings?: number;
-}
+import { AuditRecommendation } from "@/types/audit";
 
 export function generateRecommendations(
-  input: AuditInput
-): Recommendation[] {
-  const recommendations: Recommendation[] = [];
+  toolIds: string[],
+  totalSpend: number
+): AuditRecommendation[] {
+  const recommendations: AuditRecommendation[] = [];
 
-  const currentPlan = plans.find(
-    (plan) =>
-      plan.toolId === input.toolId &&
-      plan.planName.toLowerCase() ===
-        input.currentPlan.toLowerCase()
+  // Duplicate AI assistants
+  const assistants = ["chatgpt", "claude", "gemini"];
+
+  const usedAssistants = toolIds.filter((toolId) =>
+    assistants.includes(toolId)
   );
 
-  if (!currentPlan) {
-    return recommendations;
-  }
-
-  // Overspending detection
-  if (input.monthlySpend > currentPlan.monthlyPrice * 1.5) {
+  if (usedAssistants.length >= 2) {
     recommendations.push({
-      type: "warning",
-      title: "Possible Overspending Detected",
+      id: "duplicate-assistants",
+
+      type: "duplicate_tools",
+
+      title: "Multiple AI assistants detected",
+
       description:
-        "Your spend appears significantly higher than your selected plan pricing.",
-      estimatedSavings:
-        input.monthlySpend - currentPlan.monthlyPrice,
+        "Your team is paying for multiple AI assistants with overlapping capabilities.",
+
+      severity: "high",
+
+      estimatedSavings: 40,
+
+      recommendation:
+        "Standardize around one primary AI assistant for most workflows.",
+
+      alternatives: ["chatgpt", "claude", "gemini"],
+
+      action: "Reduce overlapping subscriptions",
     });
   }
 
-  // Apply audit rules
-  auditRules.forEach((rule) => {
+  // Expensive stack detection
+  if (totalSpend > 300) {
     recommendations.push({
-      type:
-        rule.severity === "high"
-          ? "warning"
-          : "saving",
+      id: "high-spend-stack",
 
-      title: rule.title,
-      description: rule.description,
-      estimatedSavings: rule.savingsPotential,
+      type: "unused_features",
+
+      title: "AI stack spending is unusually high",
+
+      description:
+        "Your startup may be paying for more AI capacity than currently needed.",
+
+      severity: "medium",
+
+      estimatedSavings: 75,
+
+      recommendation:
+        "Audit inactive users, unused premium plans, and overlapping tools.",
+
+      action: "Review premium subscriptions",
     });
+  }
+
+  // Annual billing opportunity
+  recommendations.push({
+    id: "annual-billing",
+
+    type: "billing_optimization",
+
+    title: "Switch to annual billing",
+
+    description:
+      "Several tools offer significant discounts on yearly plans.",
+
+    severity: "low",
+
+    estimatedSavings: 20,
+
+    recommendation:
+      "Move stable tools to annual billing for lower long-term costs.",
+
+    action: "Compare yearly pricing",
   });
 
-  // Alternative recommendations
-  const toolAlternatives =
-    alternatives[input.toolId] || [];
+  // Tool replacement suggestions
+  toolIds.forEach((toolId) => {
+    const toolAlternatives = alternatives[toolId];
 
-  toolAlternatives.forEach((alt: string) => {
+    if (toolAlternatives?.length) {
+      recommendations.push({
+        id: `alternative-${toolId}`,
+
+        type: "tool_replacement",
+
+        title: `Possible alternatives for ${toolId}`,
+
+        description:
+          "There may be more cost-efficient tools for your current workflow.",
+
+        severity: "medium",
+
+        estimatedSavings: 30,
+
+        recommendation:
+          "Evaluate alternative platforms with similar capabilities.",
+
+        alternatives: toolAlternatives,
+
+        action: "Compare alternatives",
+      });
+    }
+  });
+
+  // Rules-based recommendations
+  auditRules.forEach((rule) => {
     recommendations.push({
-      type: "alternative",
-      title: `Consider ${alt}`,
-      description:
-        `${alt} may provide similar functionality at a lower operational cost.`,
+      id: rule.id,
+
+      type: "enterprise_overkill",
+
+      title: rule.title,
+
+      description: rule.description,
+
+      severity: rule.severity,
+
+      estimatedSavings: rule.savingsPotential,
+
+      recommendation:
+        "Review this area carefully to optimize operational AI costs.",
+
+      action: "Review recommendation",
     });
   });
 

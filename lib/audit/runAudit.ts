@@ -1,41 +1,51 @@
-import { AuditToolEntry, AuditResult } from "@/types/audit";
+import { AuditResult, AuditToolEntry } from "@/types/audit";
+
 import { generateRecommendations } from "./recommendations";
-import { calculateStackScore } from "./scoring";
 
 export function runAudit(
   tools: AuditToolEntry[]
 ): AuditResult {
-  let totalMonthlySpend = 0;
-  let estimatedSavings = 0;
+  const totalMonthlySpend = tools.reduce(
+    (sum, tool) => sum + tool.monthlySpend,
+    0
+  );
 
-  const allRecommendations: AuditResult["recommendations"] = [];
+  const toolIds = tools.map((tool) => tool.toolId);
 
-  tools.forEach((tool) => {
-    totalMonthlySpend += tool.monthlySpend;
+  const recommendations = generateRecommendations(
+    toolIds,
+    totalMonthlySpend
+  );
 
-    const recommendations =
-      generateRecommendations({
-        toolId: tool.toolId,
-        currentPlan: tool.planName,
-        monthlySpend: tool.monthlySpend,
-        seats: tool.seats,
-      });
+  const estimatedSavings = recommendations.reduce(
+    (sum, rec) => sum + (rec.estimatedSavings || 0),
+    0
+  );
 
-    recommendations.forEach((rec) => {
-      allRecommendations.push(rec);
+  // Basic stack efficiency scoring
+  let stackScore = 100;
 
-      if (rec.estimatedSavings) {
-        estimatedSavings += rec.estimatedSavings;
-      }
-    });
-  });
+  if (toolIds.length >= 5) {
+    stackScore -= 15;
+  }
 
-  const stackScore = calculateStackScore(tools);
+  if (totalMonthlySpend > 500) {
+    stackScore -= 20;
+  }
+
+  if (recommendations.length > 6) {
+    stackScore -= 10;
+  }
+
+  stackScore = Math.max(stackScore, 20);
 
   return {
     totalMonthlySpend,
+
     estimatedSavings,
-    recommendations: allRecommendations,
+
     stackScore,
+
+    recommendations,
   };
 }
