@@ -6,6 +6,7 @@ import AuditForm from "@/components/forms/AuditForm";
 
 import StatsCard from "@/components/results/StatsCard";
 import RecommendationCard from "@/components/results/RecommendationCard";
+import EmptyState from "@/components/results/EmptyState";
 
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
@@ -70,6 +71,9 @@ export default function AuditPage() {
             </p>
           </div>
         )}
+
+        {/* Empty State */}
+        {!loading && !result && <EmptyState />}
 
         {/* Results */}
         {!loading && result && (
