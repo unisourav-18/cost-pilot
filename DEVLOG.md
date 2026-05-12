@@ -79,3 +79,67 @@
 - Implement recommendation generation logic
 - Start building spend analysis functions
 - Connect structured pricing data to audit calculations
+
+
+
+## Day 4 - 12 May 2026
+
+**Hours worked:** 7
+
+**What I did:**
+- Built the first working version of the CostPilot audit engine
+- Created core audit execution flow with:
+  - `recommendations.ts`
+  - `runAudit.ts`
+  - `mockAudit.ts`
+- Designed recommendation generation logic for:
+  - overspending detection
+  - duplicate tool detection
+  - annual billing opportunities
+  - alternative tool suggestions
+- Implemented audit scoring and estimated savings calculations
+- Refactored TypeScript interfaces for better scalability and consistency
+- Improved audit result architecture using structured recommendation objects
+- Fixed multiple TypeScript issues related to:
+  - implicit `any` types
+  - interface mismatches
+  - missing exports
+  - incorrect imports
+  - incompatible recommendation schemas
+- Connected audit engine modules with shared data files
+- Built interactive audit UI page
+- Created reusable UI components:
+  - `RecommendationCard`
+  - `SummaryCard`
+- Implemented mock audit result rendering successfully
+- Built dynamic `AuditForm.tsx`
+- Added:
+  - tool dropdown selection
+  - plan dropdown selection
+  - dynamic tool entries
+  - remove tool functionality
+  - spend and seat inputs
+- Created `options.ts` to power dynamic form selections
+- Connected structured pricing ecosystem with frontend form flow
+- Successfully reached first usable prototype stage of the application
+
+**What I learned:**
+- Strong type architecture becomes extremely important as project complexity grows
+- Recommendation engines require clean separation between rules, scoring, and UI rendering
+- Dynamic forms become significantly easier to scale using centralized option maps
+- TypeScript catches structural issues early but requires consistent interface planning
+- Building reusable components early speeds up frontend iteration later
+
+**I'm stuck on:**
+- Need to improve recommendation intelligence beyond rule-based logic
+- Need more realistic optimization heuristics for startup spending patterns
+- Still need better benchmarking logic for stack efficiency scoring
+- Need to design a cleaner UX flow for audit submission and results visualization
+
+**Plan for tomorrow:**
+- Improve audit recommendation quality
+- Build smarter savings estimation logic
+- Add benchmark comparison system
+- Create advanced result visualizations
+- Improve UI polish and responsiveness
+- Start preparing the app for real user testing
