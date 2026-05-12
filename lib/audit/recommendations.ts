@@ -25,14 +25,14 @@ export function generateRecommendations(
       title: "Multiple AI assistants detected",
 
       description:
-        "Your team is paying for multiple AI assistants with overlapping capabilities.",
+        "Your team is currently paying for multiple AI assistants that overlap heavily in features and workflows.",
 
       severity: "high",
 
       estimatedSavings: 40,
 
       recommendation:
-        "Standardize around one primary AI assistant for most workflows.",
+        "Choose one primary assistant and remove overlapping subscriptions.",
 
       alternatives: ["chatgpt", "claude", "gemini"],
 
@@ -40,7 +40,7 @@ export function generateRecommendations(
     });
   }
 
-  // Expensive stack detection
+  // High spend detection
   if (totalSpend > 300) {
     recommendations.push({
       id: "high-spend-stack",
@@ -50,20 +50,49 @@ export function generateRecommendations(
       title: "AI stack spending is unusually high",
 
       description:
-        "Your startup may be paying for more AI capacity than currently needed.",
+        "Your current monthly AI tooling spend is high for a startup-sized workflow.",
 
-      severity: "medium",
+      severity: "high",
 
       estimatedSavings: 75,
 
       recommendation:
-        "Audit inactive users, unused premium plans, and overlapping tools.",
+        "Audit inactive seats, remove duplicate tools, and downgrade unused premium plans.",
 
       action: "Review premium subscriptions",
     });
   }
 
-  // Annual billing opportunity
+  // Too many AI coding tools
+  const codingTools = ["cursor", "replit", "bolt", "v0"];
+
+  const usedCodingTools = toolIds.filter((toolId) =>
+    codingTools.includes(toolId)
+  );
+
+  if (usedCodingTools.length > 2) {
+    recommendations.push({
+      id: "too-many-coding-tools",
+
+      type: "unused_features",
+
+      title: "Too many AI coding tools detected",
+
+      description:
+        "Your engineering team may be paying for multiple overlapping AI development platforms.",
+
+      severity: "medium",
+
+      estimatedSavings: 50,
+
+      recommendation:
+        "Standardize your workflow around fewer core development tools.",
+
+      action: "Consolidate engineering stack",
+    });
+  }
+
+  // Annual billing optimization
   recommendations.push({
     id: "annual-billing",
 
@@ -72,19 +101,42 @@ export function generateRecommendations(
     title: "Switch to annual billing",
 
     description:
-      "Several tools offer significant discounts on yearly plans.",
+      "Several tools in your stack provide discounts on annual billing plans.",
 
     severity: "low",
 
     estimatedSavings: 20,
 
     recommendation:
-      "Move stable tools to annual billing for lower long-term costs.",
+      "Move stable long-term tools to yearly subscriptions to reduce costs.",
 
     action: "Compare yearly pricing",
   });
 
-  // Tool replacement suggestions
+  // Enterprise overkill
+  if (totalSpend < 150 && toolIds.includes("lovable")) {
+    recommendations.push({
+      id: "enterprise-overkill",
+
+      type: "enterprise_overkill",
+
+      title: "Enterprise-grade tooling may be unnecessary",
+
+      description:
+        "Some advanced collaboration and governance features may not yet be needed for your current scale.",
+
+      severity: "medium",
+
+      estimatedSavings: 35,
+
+      recommendation:
+        "Consider simpler plans until your team scales further.",
+
+      action: "Review advanced subscriptions",
+    });
+  }
+
+  // Tool alternatives
   toolIds.forEach((toolId) => {
     const toolAlternatives = alternatives[toolId];
 
@@ -97,14 +149,12 @@ export function generateRecommendations(
         title: `Possible alternatives for ${toolId}`,
 
         description:
-          "There may be more cost-efficient tools for your current workflow.",
+          "There may be cheaper or more efficient tools that fit your workflow.",
 
-        severity: "medium",
-
-        estimatedSavings: 30,
+        severity: "low",
 
         recommendation:
-          "Evaluate alternative platforms with similar capabilities.",
+          `Consider evaluating: ${toolAlternatives.join(", ")}`,
 
         alternatives: toolAlternatives,
 
@@ -118,7 +168,7 @@ export function generateRecommendations(
     recommendations.push({
       id: rule.id,
 
-      type: "enterprise_overkill",
+      type: "unused_features",
 
       title: rule.title,
 
@@ -129,7 +179,7 @@ export function generateRecommendations(
       estimatedSavings: rule.savingsPotential,
 
       recommendation:
-        "Review this area carefully to optimize operational AI costs.",
+        "Review this area carefully to optimize AI operational costs.",
 
       action: "Review recommendation",
     });

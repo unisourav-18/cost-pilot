@@ -3,66 +3,105 @@
 import { useState } from "react";
 
 import AuditForm from "@/components/forms/AuditForm";
-import SummaryCard from "@/components/results/SummaryCard";
+
+import StatsCard from "@/components/results/StatsCard";
 import RecommendationCard from "@/components/results/RecommendationCard";
+
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+
+import {
+  AuditResult,
+  AuditToolEntry,
+} from "@/types/audit";
 
 import { runAudit } from "@/lib/audit/runAudit";
 
-import { AuditResult, AuditToolEntry } from "@/types/audit";
-
 export default function AuditPage() {
-  const [auditResult, setAuditResult] =
+  const [result, setResult] =
     useState<AuditResult | null>(null);
 
-  const handleAudit = (entries: AuditToolEntry[]) => {
-    const result = runAudit(entries);
+  const [loading, setLoading] = useState(false);
 
-    setAuditResult(result);
+  const handleAudit = async (
+    entries: AuditToolEntry[]
+  ) => {
+    setLoading(true);
+
+    // Fake AI processing delay
+    await new Promise((resolve) =>
+      setTimeout(resolve, 1500)
+    );
+
+    const auditResult = runAudit(entries);
+
+    setResult(auditResult);
+
+    setLoading(false);
   };
 
   return (
-    <main className="min-h-screen bg-black px-6 py-10 text-white">
+    <main className="min-h-screen bg-black px-6 py-12 text-white">
       <div className="mx-auto max-w-6xl">
+        {/* Header */}
         <div className="mb-10">
-          <h1 className="text-5xl font-bold">
-            CostPilot Audit Engine
+          <h1 className="text-4xl font-bold">
+            CostPilot AI Audit
           </h1>
 
-          <p className="mt-4 text-zinc-400">
-            Analyze your AI stack and identify overspending.
+          <p className="mt-3 text-zinc-400">
+            Analyze your AI stack and discover
+            optimization opportunities.
           </p>
         </div>
 
-        <AuditForm onSubmit={handleAudit} />
+        {/* Form */}
+        <AuditForm
+          onSubmit={handleAudit}
+          loading={loading}
+        />
 
-        {auditResult && (
-          <>
-            <div className="mt-12 grid gap-6 md:grid-cols-3">
-              <SummaryCard
-                title="Total Monthly Spend"
-                value={`$${auditResult.totalMonthlySpend}`}
+        {/* Loading */}
+        {loading && (
+          <div className="mt-12 rounded-3xl border border-white/10 bg-zinc-900/60 p-10">
+            <LoadingSpinner />
+
+            <p className="mt-4 text-center text-zinc-400">
+              Analyzing your AI stack...
+            </p>
+          </div>
+        )}
+
+        {/* Results */}
+        {!loading && result && (
+          <div className="mt-12 space-y-10">
+            {/* Stats */}
+            <div className="grid gap-6 md:grid-cols-3">
+              <StatsCard
+                title="Monthly Spend"
+                value={`$${result.totalMonthlySpend}`}
               />
 
-              <SummaryCard
+              <StatsCard
                 title="Estimated Savings"
-                value={`$${auditResult.estimatedSavings}`}
-                color="text-emerald-400"
+                value={`$${result.estimatedSavings}`}
+                color="emerald"
               />
 
-              <SummaryCard
+              <StatsCard
                 title="Stack Score"
-                value={`${auditResult.stackScore}/100`}
-                color="text-yellow-400"
+                value={`${result.stackScore}/100`}
+                color="blue"
               />
             </div>
 
-            <div className="mt-12">
-              <h2 className="mb-6 text-3xl font-bold">
+            {/* Recommendations */}
+            <div>
+              <h2 className="mb-6 text-2xl font-semibold">
                 Recommendations
               </h2>
 
-              <div className="grid gap-6">
-                {auditResult.recommendations.map(
+              <div className="grid gap-5">
+                {result.recommendations.map(
                   (recommendation) => (
                     <RecommendationCard
                       key={recommendation.id}
@@ -72,7 +111,7 @@ export default function AuditPage() {
                 )}
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </main>

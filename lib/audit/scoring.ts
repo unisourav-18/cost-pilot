@@ -5,19 +5,25 @@ export function calculateStackScore(
 ): number {
   let score = 100;
 
+  // Total monthly spend
+  const totalSpend = tools.reduce(
+    (sum, tool) => sum + tool.monthlySpend,
+    0
+  );
+
   // Too many tools penalty
   if (tools.length > 5) {
     score -= 15;
   }
 
   // Expensive stack penalty
-  const totalSpend = tools.reduce(
-    (sum, tool) => sum + tool.monthlySpend,
-    0
-  );
-
   if (totalSpend > 500) {
     score -= 20;
+  }
+
+  // Very expensive stack
+  if (totalSpend > 1000) {
+    score -= 10;
   }
 
   // Duplicate assistant penalty
@@ -40,5 +46,21 @@ export function calculateStackScore(
     score -= 15;
   }
 
-  return Math.max(score, 0);
+  // Enterprise overkill penalty
+  const expensivePlans = tools.filter((tool) =>
+    ["team", "business", "enterprise"].some((keyword) =>
+      tool.planName.toLowerCase().includes(keyword)
+    )
+  );
+
+  if (expensivePlans.length >= 2) {
+    score -= 15;
+  }
+
+  // Reward lean stacks
+  if (tools.length <= 3 && totalSpend < 200) {
+    score += 5;
+  }
+
+  return Math.min(Math.max(score, 10), 100);
 }
