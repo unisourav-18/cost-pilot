@@ -39,12 +39,4 @@ export const auditRules: AuditRule[] = [
     severity: "low",
     savingsPotential: 15,
   },
-  {
-    id: "enterprise-overkill",
-    title: "Enterprise features not required",
-    description:
-      "Your startup may not need advanced enterprise governance features yet.",
-    severity: "medium",
-    savingsPotential: 35,
-  },
 ];

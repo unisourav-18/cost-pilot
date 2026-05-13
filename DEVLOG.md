@@ -143,3 +143,46 @@
 - Create advanced result visualizations
 - Improve UI polish and responsiveness
 - Start preparing the app for real user testing
+
+## Day 5 - 13 May 2026
+
+**Hours worked:** 8
+
+**What I did:**
+- Upgraded AuditForm with three missing requirements:
+  - Team size input
+  - Primary use case selector (coding / writing / data / research / mixed)
+  - localStorage persistence so form state survives page reloads
+- Integrated Anthropic API for AI-generated personalized audit summaries
+  - Built server-side API route to keep API key off the client
+  - Implemented graceful fallback to templated summary on API failure
+- Set up Supabase database with audits table
+- Built shareable audit URLs — every audit gets a unique `/audit/[id]` page
+- Added Open Graph and Twitter Card meta tags for clean link previews
+- Added share banner with one-click copy to clipboard + "Copied!" feedback state
+- Fixed TypeScript type mismatch (summary field optional in AuditResult)
+- Set up Vitest as test runner and wrote 10 passing tests covering the audit engine:
+  - 5 tests for runAudit.ts (spend calculation, scoring, floor constraints)
+  - 5 tests for recommendations.ts (rule boundaries, required fields, alternatives)
+- Fixed a bug in data/rules.ts where enterprise-overkill was firing unconditionally
+- Added GitHub Actions CI workflow — lint + tests run on every push to main
+- Deployed to Vercel at https://cost-pilot-1i6k.vercel.app
+- Wrote and finalized all required documentation:
+  - README.md — setup, architecture, decisions, screenshots, deploy guide
+  - PROMPTS.md — full prompt, variables, fallback behavior, AI usage rationale
+  - ARCHITECTURE.md — Mermaid system diagram, data flow, stack decisions, 10k/day scaling plan
+  - REFLECTION.md — bug retrospective, reversed decisions, week 2 roadmap, AI tool usage, self-ratings
+  - TESTS.md — test coverage table and run instructions
+  - USER_INTERVIEWS.md — LinkedIn outreach, feedback synthesis, next interview targets
+  - LANDING_COPY.md — hero copy, social proof, FAQ
+  - METRICS.md — North Star metric, input metrics, instrumentation plan, pivot triggers
+
+**What I learned:**
+- Keeping API keys server-side via Next.js API routes is non-negotiable — client-side calls expose credentials in network requests
+- A two-effect pattern (hydrate on mount, persist on change) is necessary for localStorage in Next.js to avoid SSR hydration mismatches
+- Test inputs must be derived from the actual rule boundaries in the code, not assumed — the enterprise-overkill bug was caused by a rule firing from two places simultaneously
+- Shipping a clean product without a half-implemented feature is always better than shipping with one
+
+**I'm stuck on:**
+- Nothing blocking — project is complete and submitted
+
