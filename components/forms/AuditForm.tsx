@@ -1,120 +1,114 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-import { AuditToolEntry } from "@/types/audit";
-import { toolOptions, planOptions } from "@/lib/audit/options";
+import { AuditToolEntry, AuditFormState, PrimaryUseCase } from "@/types/audit";
+import { toolOptions, planOptions, useCaseOptions } from "@/lib/audit/options";
+
+const STORAGE_KEY = "audit-form-state";
+
+const defaultEntry = (): AuditToolEntry => ({
+  toolId: "",
+  planName: "",
+  monthlySpend: 0,
+  seats: 1,
+});
+
+const defaultState: AuditFormState = {
+  entries: [defaultEntry()],
+  teamSize: 1,
+  primaryUseCase: "",
+};
+
+function loadState(): AuditFormState {
+  if (typeof window === "undefined") return defaultState;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as AuditFormState) : defaultState;
+  } catch {
+    return defaultState;
+  }
+}
 
 interface AuditFormProps {
-  onSubmit: (entries: AuditToolEntry[]) => void;
+  onSubmit: (
+    entries: AuditToolEntry[],
+    teamSize: number,
+    primaryUseCase: PrimaryUseCase | ""
+  ) => void;
   loading?: boolean;
 }
 
-const demoData: AuditToolEntry[] = [
-  {
-    toolId: "chatgpt",
-    planName: "Plus",
-    monthlySpend: 20,
-    seats: 5,
-  },
-
-  {
-    toolId: "claude",
-    planName: "Pro",
-    monthlySpend: 20,
-    seats: 3,
-  },
-
-  {
-    toolId: "cursor",
-    planName: "Pro",
-    monthlySpend: 20,
-    seats: 6,
-  },
-
-  {
-    toolId: "replit",
-    planName: "Core",
-    monthlySpend: 20,
-    seats: 4,
-  },
-];
+const demoState: AuditFormState = {
+  teamSize: 12,
+  primaryUseCase: "coding",
+  entries: [
+    { toolId: "chatgpt", planName: "Plus",  monthlySpend: 20, seats: 5 },
+    { toolId: "claude",  planName: "Pro",   monthlySpend: 20, seats: 3 },
+    { toolId: "cursor",  planName: "Pro",   monthlySpend: 20, seats: 6 },
+    { toolId: "replit",  planName: "Core",  monthlySpend: 20, seats: 4 },
+  ],
+};
 
 export default function AuditForm({
   onSubmit,
   loading = false,
 }: AuditFormProps) {
-  const [entries, setEntries] = useState<AuditToolEntry[]>([
-    {
-      toolId: "",
-      planName: "",
-      monthlySpend: 0,
-      seats: 1,
-    },
-  ]);
+  const [formState, setFormState] = useState<AuditFormState>(defaultState);
 
+  // Hydrate from localStorage on mount
+  useEffect(() => {
+    setFormState(loadState());
+  }, []);
+
+  // Persist to localStorage on every change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(formState));
+    } catch {
+      // storage unavailable — fail silently
+    }
+  }, [formState]);
+
+  const { entries, teamSize, primaryUseCase } = formState;
+
+  const patch = (partial: Partial<AuditFormState>) =>
+    setFormState((prev) => ({ ...prev, ...partial }));
+
+  // ── Entry helpers ──────────────────────────────────────────
   const updateEntry = (
     index: number,
     field: keyof AuditToolEntry,
     value: string | number
   ) => {
     const updated = [...entries];
-
-    updated[index] = {
-      ...updated[index],
-      [field]: value,
-    };
-
-    // Reset plan when tool changes
-    if (field === "toolId") {
-      updated[index].planName = "";
-    }
-
-    setEntries(updated);
+    updated[index] = { ...updated[index], [field]: value };
+    if (field === "toolId") updated[index].planName = "";
+    patch({ entries: updated });
   };
 
-  const addEntry = () => {
-    setEntries([
-      ...entries,
-      {
-        toolId: "",
-        planName: "",
-        monthlySpend: 0,
-        seats: 1,
-      },
-    ]);
-  };
+  const addEntry = () =>
+    patch({ entries: [...entries, defaultEntry()] });
 
-  const removeEntry = (index: number) => {
-    const updated = entries.filter((_, i) => i !== index);
+  const removeEntry = (index: number) =>
+    patch({ entries: entries.filter((_, i) => i !== index) });
 
-    setEntries(updated);
-  };
-
-  const loadDemo = () => {
-    setEntries(demoData);
-  };
+  const loadDemo = () => setFormState(demoState);
 
   const handleSubmit = () => {
     const filtered = entries.filter(
-      (entry) =>
-        entry.toolId &&
-        entry.planName &&
-        entry.monthlySpend > 0
+      (e) => e.toolId && e.planName && e.monthlySpend > 0
     );
-
-    onSubmit(filtered);
+    onSubmit(filtered, teamSize, primaryUseCase);
   };
 
   return (
     <div className="space-y-6">
-      {/* Top Actions */}
+
+      {/* ── Header row ───────────────────────────────────────── */}
       <div className="flex flex-wrap justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-white">
-            Add Your AI Stack
-          </h2>
-
+          <h2 className="text-xl font-semibold text-white">Add Your AI Stack</h2>
           <p className="mt-1 text-sm text-zinc-400">
             Enter your tools, plans, and monthly spend.
           </p>
@@ -129,10 +123,50 @@ export default function AuditForm({
         </button>
       </div>
 
-      {/* Entries */}
+      {/* ── Team context (NEW) ────────────────────────────────── */}
+      <div className="rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-lg">
+        <h3 className="mb-4 text-lg font-medium text-white">Team Context</h3>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* Team size */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm text-zinc-400">Team Size</label>
+            <input
+              type="number"
+              min={1}
+              placeholder="e.g. 12"
+              disabled={loading}
+              value={teamSize}
+              onChange={(e) => patch({ teamSize: Number(e.target.value) })}
+              className="rounded-xl border border-white/10 bg-zinc-800 p-3 text-white outline-none transition focus:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
+
+          {/* Primary use case */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm text-zinc-400">Primary Use Case</label>
+            <select
+              value={primaryUseCase}
+              disabled={loading}
+              onChange={(e) =>
+                patch({ primaryUseCase: e.target.value as PrimaryUseCase | "" })
+              }
+              className="rounded-xl border border-white/10 bg-zinc-800 p-3 text-white outline-none transition focus:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">Select Use Case</option>
+              {useCaseOptions.map((uc) => (
+                <option key={uc.id} value={uc.id}>
+                  {uc.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Tool entries ─────────────────────────────────────── */}
       {entries.map((entry, index) => {
-        const availablePlans =
-          planOptions[entry.toolId] || [];
+        const availablePlans = planOptions[entry.toolId] || [];
 
         return (
           <div
@@ -156,76 +190,48 @@ export default function AuditForm({
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              {/* Tool Select */}
               <select
                 value={entry.toolId}
                 disabled={loading}
-                onChange={(e) =>
-                  updateEntry(index, "toolId", e.target.value)
-                }
+                onChange={(e) => updateEntry(index, "toolId", e.target.value)}
                 className="rounded-xl border border-white/10 bg-zinc-800 p-3 text-white outline-none transition focus:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="">Select Tool</option>
-
                 {toolOptions.map((tool) => (
-                  <option
-                    key={tool.id}
-                    value={tool.id}
-                  >
-                    {tool.name}
-                  </option>
+                  <option key={tool.id} value={tool.id}>{tool.name}</option>
                 ))}
               </select>
 
-              {/* Plan Select */}
               <select
                 value={entry.planName}
                 disabled={loading || !entry.toolId}
-                onChange={(e) =>
-                  updateEntry(index, "planName", e.target.value)
-                }
+                onChange={(e) => updateEntry(index, "planName", e.target.value)}
                 className="rounded-xl border border-white/10 bg-zinc-800 p-3 text-white outline-none transition focus:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="">Select Plan</option>
-
                 {availablePlans.map((plan) => (
-                  <option
-                    key={plan}
-                    value={plan}
-                  >
-                    {plan}
-                  </option>
+                  <option key={plan} value={plan}>{plan}</option>
                 ))}
               </select>
 
-              {/* Monthly Spend */}
               <input
                 type="number"
                 placeholder="Monthly Spend ($)"
                 disabled={loading}
                 value={entry.monthlySpend}
                 onChange={(e) =>
-                  updateEntry(
-                    index,
-                    "monthlySpend",
-                    Number(e.target.value)
-                  )
+                  updateEntry(index, "monthlySpend", Number(e.target.value))
                 }
                 className="rounded-xl border border-white/10 bg-zinc-800 p-3 text-white outline-none transition focus:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
               />
 
-              {/* Seats */}
               <input
                 type="number"
                 placeholder="Seats"
                 disabled={loading}
                 value={entry.seats}
                 onChange={(e) =>
-                  updateEntry(
-                    index,
-                    "seats",
-                    Number(e.target.value)
-                  )
+                  updateEntry(index, "seats", Number(e.target.value))
                 }
                 className="rounded-xl border border-white/10 bg-zinc-800 p-3 text-white outline-none transition focus:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
               />
@@ -234,7 +240,7 @@ export default function AuditForm({
         );
       })}
 
-      {/* Bottom Actions */}
+      {/* ── Bottom actions ───────────────────────────────────── */}
       <div className="flex flex-wrap gap-4">
         <button
           onClick={addEntry}
@@ -251,8 +257,7 @@ export default function AuditForm({
         >
           {loading ? (
             <div className="flex items-center gap-3">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-black/30 border-t-black"></div>
-
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-black/30 border-t-black" />
               <span>Running Audit...</span>
             </div>
           ) : (

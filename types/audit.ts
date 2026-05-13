@@ -42,4 +42,19 @@ export interface AuditResult {
   stackScore: number;
 
   recommendations: AuditRecommendation[];
+
+  summary: string; // ← new
+}
+
+export type PrimaryUseCase =
+  | "coding"
+  | "writing"
+  | "data"
+  | "research"
+  | "mixed";
+
+export interface AuditFormState {
+  entries: AuditToolEntry[];
+  teamSize: number;
+  primaryUseCase: PrimaryUseCase | "";
 }

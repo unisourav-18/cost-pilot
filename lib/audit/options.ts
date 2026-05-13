@@ -1,3 +1,5 @@
+import { PrimaryUseCase } from "@/types/audit";
+
 export interface ToolOption {
   id: string;
   name: string;
@@ -24,3 +26,12 @@ export const planOptions: Record<string, string[]> = {
   replit: ["Starter", "Core", "Pro"],
   bolt: ["Free", "Pro", "Teams"],
 };
+
+
+export const useCaseOptions: { id: PrimaryUseCase; label: string }[] = [
+  { id: "coding",    label: "Coding" },
+  { id: "writing",   label: "Writing" },
+  { id: "data",      label: "Data" },
+  { id: "research",  label: "Research" },
+  { id: "mixed",     label: "Mixed" },
+];
