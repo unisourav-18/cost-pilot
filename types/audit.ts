@@ -43,7 +43,7 @@ export interface AuditResult {
 
   recommendations: AuditRecommendation[];
 
-  summary: string; // ← new
+  summary?: string;// ← new
 }
 
 export type PrimaryUseCase =
