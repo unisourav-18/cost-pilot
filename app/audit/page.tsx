@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import AuditForm from "@/components/forms/AuditForm";
 import StatsCard from "@/components/results/StatsCard";
@@ -11,21 +12,25 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { AuditResult, AuditToolEntry, PrimaryUseCase } from "@/types/audit";
 import { runAudit } from "@/lib/audit/runAudit";
 import { generateSummary } from "@/lib/audit/generateSummary";
+import { saveAudit } from "@/lib/audit/saveAudit";
 
 export default function AuditPage() {
+  const router = useRouter();
   const [result, setResult] = useState<AuditResult | null>(null);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const handleAudit = async (
     entries: AuditToolEntry[],
     teamSize: number,
-    primaryUseCase: PrimaryUseCase | ""
+    primaryUseCase: PrimaryUseCase | "",
   ) => {
     setLoading(true);
+    setShareUrl(null);
 
     const auditResult = runAudit(entries);
 
-    // Run math + AI summary in parallel; summary has its own fallback
     const summary = await generateSummary({
       tools: entries,
       teamSize,
@@ -33,7 +38,21 @@ export default function AuditPage() {
       result: auditResult,
     });
 
-    setResult({ ...auditResult, summary });
+    const finalResult = { ...auditResult, summary };
+    setResult(finalResult);
+
+    // Save to Supabase and get shareable ID
+    const auditId = await saveAudit({
+      tools: entries,
+      teamSize,
+      primaryUseCase,
+      result: finalResult,
+    });
+
+    if (auditId) {
+      setShareUrl(`/audit/${auditId}`);
+    }
+
     setLoading(false);
   };
 
@@ -49,10 +68,7 @@ export default function AuditPage() {
         </div>
 
         {/* Form */}
-        <AuditForm
-          onSubmit={handleAudit}
-          loading={loading}
-        />
+        <AuditForm onSubmit={handleAudit} loading={loading} />
 
         {/* Loading */}
         {loading && (
@@ -70,11 +86,54 @@ export default function AuditPage() {
         {/* Results */}
         {!loading && result && (
           <div className="mt-12 space-y-10">
+            {/* Share banner */}
+            {shareUrl && (
+              <div className="flex items-center justify-between gap-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-4">
+                <p className="text-sm text-emerald-300">
+                  Your audit has a shareable link:
+                </p>
+                <div className="flex items-center gap-3">
+                  <code className="rounded-lg bg-zinc-800 px-3 py-1 text-sm text-zinc-300">
+                    {typeof window !== "undefined"
+                      ? `${window.location.origin}${shareUrl}`
+                      : shareUrl}
+                  </code>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        `${window.location.origin}${shareUrl}`,
+                      );
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className={`rounded-lg px-3 py-1 text-sm font-medium transition ${
+                      copied
+                        ? "bg-zinc-700 text-emerald-400"
+                        : "bg-emerald-500 text-black hover:bg-emerald-400"
+                    }`}
+                  >
+                    {copied ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Stats */}
             <div className="grid gap-6 md:grid-cols-3">
-              <StatsCard title="Monthly Spend" value={`$${result.totalMonthlySpend}`} />
-              <StatsCard title="Estimated Savings" value={`$${result.estimatedSavings}`} color="emerald" />
-              <StatsCard title="Stack Score" value={`${result.stackScore}/100`} color="blue" />
+              <StatsCard
+                title="Monthly Spend"
+                value={`$${result.totalMonthlySpend}`}
+              />
+              <StatsCard
+                title="Estimated Savings"
+                value={`$${result.estimatedSavings}`}
+                color="emerald"
+              />
+              <StatsCard
+                title="Stack Score"
+                value={`${result.stackScore}/100`}
+                color="blue"
+              />
             </div>
 
             {/* AI Summary */}
